@@ -202,3 +202,7 @@ Copiar el aspecto de la página de puzzles de **Lichess**, sin usar su nombre ni
 - Componentes funcionales con hooks. Nada de componentes de clase.
 - Nombres de código en inglés y textos de interfaz en castellano rioplatense.
 - Lógica pura (notación, rating, selección de puzzles) en `src/lib/`, sin depender de React, para poder probarla aparte.
+
+## Git
+
+- Pushear directo a `main`, sin ramas aparte, salvo que se pida otra cosa.
