@@ -54,6 +54,7 @@ function TrainingSession({ mode }: { mode: Mode }) {
             destinations={t.destinations}
             showSquareNames={settings.showSquareNames}
             onSquareClick={t.clickSquare}
+            shapesKey={state.puzzle?.id}
           >
             {state.memorizing && <TimerBar seconds={state.memTime} resetKey={state.puzzle?.id ?? ""} />}
             {t.finished && state.puzzle && <SolvedOverlay success={!state.failed} />}
@@ -69,6 +70,10 @@ function TrainingSession({ mode }: { mode: Mode }) {
             </span>
             {state.hidden && !state.peeking && <span>Piezas ocultas</span>}
           </div>
+          <p className="mt-1 hidden px-3 text-xs text-dim sm:px-0 dark:text-dim-dk [@media(pointer:fine)]:block">
+            Clic derecho marca una casilla; arrastrando dibujás una flecha. Con Shift, Alt o los dos cambia el color. Un
+            clic izquierdo borra todo.
+          </p>
         </div>
       </div>
 

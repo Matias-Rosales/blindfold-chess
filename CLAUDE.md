@@ -142,6 +142,7 @@ La sesión de entrenamiento se vuelve a montar (con `key`) cuando cambian el mod
 9. **Espiar**: revela las piezas durante 2 s.
    - En el modo con rating, cuenta como error.
    - En el modo racha hay **una espiada disponible por racha**.
+10. **Marcas** (como en Lichess, `src/lib/annotations.ts` y `ShapesLayer`): clic derecho marca una casilla con un círculo y arrastrar con clic derecho dibuja una flecha. Colores: verde; Shift rojo; Alt azul; Shift + Alt (o Ctrl) amarillo. Repetir la misma marca la borra y con otro color la reemplaza. Un clic izquierdo borra todas, y se borran solas al pasar a otro puzzle. Se dibujan en una capa SVG (`viewBox 0 0 8 8`) que no recibe clics. Solo con mouse: en pantallas táctiles no hay clic derecho.
 
 ## Modos
 
@@ -179,6 +180,7 @@ Todas las lecturas y escrituras van en try/catch, y la app tiene que funcionar s
 - `Board`: props `fen`, `orientation`, `hidden`, `hideStyle`, `selected`, `lastMove`, `wrongSquare`, `onSquareClick` y `children` para superposiciones.
 - `Square`: nombre, color claro u oscuro, pieza, resaltados y coordenadas en el borde.
 - `Piece`: tipo, color y modo de visualización (pieza, ficha u oculta). La pieza y la ficha están siempre en el DOM y se alternan por clases, para que la transición se anime.
+- `ShapesLayer`: capa SVG con los círculos y las flechas dibujados. `Board` maneja el clic derecho y recibe `shapesKey` (el id del puzzle) para borrar las marcas al cambiar de puzzle.
 - `TimerBar`: segundos y clave de reinicio.
 - `SolvedOverlay`: aviso de resuelto o fallado que aparece y se desvanece sobre el tablero.
 - `ScoreCard`, `PuzzleInfo` (id, rating y temas, que se muestran recién al terminar), `MessageBox`, `MoveLog`, `ActionButtons` (Espiar, Ver solución, Siguiente o Nueva racha).
