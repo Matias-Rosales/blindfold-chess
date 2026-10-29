@@ -1,75 +1,45 @@
-# React + TypeScript + Vite
+# A ciegas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Puzzles de ajedrez para entrenar la visualización. Mirás la posición unos segundos, las piezas se ocultan (o se vuelven fichas) y tenés que resolver el puzzle de memoria.
 
-Currently, two official plugins are available:
+Dos formas de entrenar, desde la pantalla de inicio:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Puzzles**: elegidos según tu rating de visualización, que sube o baja con cada puzzle.
+- **Racha**: puzzles cada vez más difíciles. Un error y se termina. Una espiada por racha.
 
-## React Compiler
+Hecho con React, TypeScript, Vite, Tailwind CSS y chess.js. El diseño sigue al de la página de puzzles de Lichess.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Uso
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Otros comandos:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run build   # chequeo de tipos y build de producción
+npm run lint
+npm test        # pruebas de la lógica pura (src/lib)
 ```
+
+## Base de puzzles
+
+Sin datos generados, la app usa los 17 puzzles de ejemplo de `src/data/samples.ts`. Para usar la base de Lichess:
+
+1. Descargá `lichess_db_puzzle.csv.zst` de https://database.lichess.org/#puzzles.
+2. Generá los JSON. El script acepta el `.csv` o directamente el `.csv.zst` (Node 22.15 o más nuevo):
+
+   ```bash
+   npm run build:puzzles -- ruta/a/lichess_db_puzzle.csv.zst --per-bucket 150
+   ```
+
+   Se queda con los puzzles populares y muy jugados (`Popularity >= 70`, `NbPlays >= 300`), toma una muestra de cada tramo de 100 puntos de rating, descarta los que tengan jugadas ilegales y escribe `public/puzzles/<tramo>.json` más un `index.json`. Con `--seed` se cambia la muestra y con `--out` la carpeta de salida.
+
+También se puede importar un CSV propio desde el navegador, en la caja "Base de puzzles".
+
+## Créditos
+
+- Puzzles: [base abierta de Lichess](https://database.lichess.org/#puzzles) (CC0).
+- Piezas: set cburnett de [Colin M.L. Burnett](https://en.wikipedia.org/wiki/User:Cburnett), copiado de [lila](https://github.com/lichess-org/lila), con licencia GPLv2+.
