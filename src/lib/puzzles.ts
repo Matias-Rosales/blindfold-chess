@@ -54,24 +54,27 @@ export function pickRatedPuzzle(
 }
 
 /**
- * Cola de la racha: una escalera de dificultad. Cada puzzle se elige al azar entre
- * los que están en [objetivo, objetivo + 100) y el objetivo sube 50 por puzzle.
- * Si no hay ninguno en ese rango se toma el siguiente más fácil por encima del objetivo.
- * La cola termina cuando no quedan puzzles más difíciles.
+ * Cola de la racha: una escalera de dificultad que nunca baja. El objetivo arranca
+ * en 600 y sube 50 por puzzle; cada puzzle se elige al azar entre los que están en
+ * [objetivo, objetivo + 100) y no son más fáciles que el anterior. Si no hay ninguno
+ * (pasa con ratings muy altos, donde quedan pocos puzzles) se toma el siguiente más
+ * difícil. La cola termina cuando no quedan puzzles más difíciles.
  */
 export function buildStreakQueue(pool: Puzzle[], theme: string, random: Random = Math.random): Puzzle[] {
   const remaining = [...filterByTheme(pool, theme)].sort((a, b) => a.rating - b.rating);
   const queue: Puzzle[] = [];
   let target = Math.max(STREAK_START, remaining[0]?.rating ?? 0);
+  let previous = 0;
   while (remaining.length) {
-    const inWindow = remaining.filter((p) => p.rating >= target && p.rating < target + STREAK_WINDOW);
-    const pick = inWindow.length ? randomItem(inWindow, random) : remaining.find((p) => p.rating >= target);
+    const floor = Math.max(target, previous);
+    const inWindow = remaining.filter((p) => p.rating >= floor && p.rating < target + STREAK_WINDOW);
+    const pick = inWindow.length ? randomItem(inWindow, random) : remaining.find((p) => p.rating >= floor);
     if (!pick) break;
     queue.push(pick);
     remaining.splice(remaining.indexOf(pick), 1);
+    previous = pick.rating;
     // Si hubo que saltar a un puzzle más difícil, la escalera sigue desde ahí.
-    if (!inWindow.length) target = pick.rating;
-    target += STREAK_STEP;
+    target = (inWindow.length ? target : pick.rating) + STREAK_STEP;
   }
   return queue;
 }

@@ -84,6 +84,8 @@ describe("selección", () => {
         expect(p.rating).toBeGreaterThanOrEqual(STREAK_START + STREAK_STEP * n);
         expect(p.rating).toBeLessThan(STREAK_START + STREAK_STEP * n + 100);
       });
+      // Nunca baja.
+      queue.forEach((p, n) => n > 0 && expect(p.rating).toBeGreaterThanOrEqual(queue[n - 1].rating));
       expect(new Set(queue.map((p) => p.id)).size).toBe(queue.length);
       expect(queue.at(-1)!.rating).toBeGreaterThan(3150);
     }

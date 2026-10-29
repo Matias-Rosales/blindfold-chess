@@ -133,7 +133,7 @@ La sesión de entrenamiento se vuelve a montar (con `key`) cuando cambian el mod
   - `K` vale 48 en los primeros 20 puzzles y 28 después. Rating mínimo: 100.
   - Un puzzle cuenta una sola vez: si ya falló, resolverlo después no suma.
   - Se muestra el delta del último puzzle (+34 / −30).
-- **Racha (streak)**: una escalera de dificultad. El objetivo arranca en 600 y sube 50 con cada puzzle; cada puzzle se elige al azar entre los que tienen rating en [objetivo, objetivo + 100), y si no hay ninguno se toma el siguiente más difícil (el del prototipo, ordenar todo por rating + 0 a 180 al azar, no sirve con 150 puzzles por tramo: la dificultad casi no sube). Un error termina la racha y se muestra cuál era la jugada correcta. Al resolver uno, el siguiente pasa solo después de unos 1100 ms. Se guarda el récord.
+- **Racha (streak)**: una escalera de dificultad que nunca baja. El objetivo arranca en 600 y sube 50 con cada puzzle; cada puzzle se elige al azar entre los que tienen rating en [objetivo, objetivo + 100) y no son más fáciles que el anterior. Si no hay ninguno (con ratings muy altos quedan pocos) se toma el siguiente más difícil, y la cola termina cuando no quedan más. El método del prototipo (ordenar todo por rating + 0 a 180 al azar) no sirve con 150 puzzles por tramo: la dificultad casi no sube. Un error termina la racha y se muestra cuál era la jugada correcta. Al resolver uno, el siguiente pasa solo después de unos 1100 ms. Se guarda el récord.
 
 ## Notación
 
