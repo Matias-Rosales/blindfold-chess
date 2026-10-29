@@ -9,7 +9,6 @@ import { SolvedOverlay } from "./board/SolvedOverlay";
 import { TimerBar } from "./board/TimerBar";
 import { ImportPanel } from "./ImportPanel";
 import { MessageBox } from "./MessageBox";
-import { MoveInput } from "./MoveInput";
 import { MoveLog } from "./MoveLog";
 import { PuzzleInfo } from "./PuzzleInfo";
 import { ScoreCard } from "./ScoreCard";
@@ -85,7 +84,6 @@ function TrainingSession({ mode }: { mode: Mode }) {
           />
           <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3 dark:border-line-dk">
             <MoveLog log={state.log} />
-            <MoveInput disabled={!t.canMove} onSubmit={t.submitTyped} />
             <ActionButtons
               mode={mode}
               canPeek={t.canPeek}

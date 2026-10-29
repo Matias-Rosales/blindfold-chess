@@ -111,7 +111,7 @@ La sesión de entrenamiento se vuelve a montar (con `key`) cuando cambian el mod
 1. Cargar la FEN. El color del usuario es el contrario al que mueve en la FEN, y el tablero se orienta hacia el usuario.
 2. Mostrar la posición unos 800 ms y jugar automáticamente `moves[0]`, la jugada del rival, resaltando origen y destino.
 3. Arrancar la cuenta regresiva de memorización con una barra que se vacía sobre el tablero. Al terminar, ocultar las piezas según el estilo. El usuario puede jugar antes de que se oculten.
-4. El usuario juega tocando la casilla de origen y después la de destino, o escribiendo la jugada.
+4. El usuario juega tocando la casilla de origen y después la de destino. No hay opción de escribir la jugada.
    - Con las piezas visibles, solo se pueden seleccionar piezas propias.
    - Con las piezas ocultas, se puede seleccionar cualquier casilla, para no revelar información.
 5. **Jugada correcta**: coincide con `moves[i]`. Si es la última jugada del puzzle, también se acepta cualquier jugada que dé mate.
@@ -138,10 +138,6 @@ La sesión de entrenamiento se vuelve a montar (con `key`) cuando cambian el mod
 ## Notación
 
 - Mostrar las jugadas en notación castellana: C caballo, A alfil, T torre, D dama, R rey (por ejemplo "Txe8#").
-- El input de texto acepta notación castellana, notación inglesa y UCI (`Cf7`, `Nf7`, `g5f7`, `O-O`, `0-0`).
-  - La "R" es ambigua: probar primero como torre (inglés) y, si no hay jugada legal, como rey (castellano).
-  - Un texto con formato inválido muestra un aviso y no cuenta como error.
-  - Una jugada bien escrita pero ilegal, con las piezas ocultas, cuenta como error.
 
 ## Persistencia (localStorage)
 
@@ -161,7 +157,7 @@ Todas las lecturas y escrituras van en try/catch, y la app tiene que funcionar s
 - `Piece`: tipo, color y modo de visualización (pieza, ficha u oculta). La pieza y la ficha están siempre en el DOM y se alternan por clases, para que la transición se anime.
 - `TimerBar`: segundos y clave de reinicio.
 - `SolvedOverlay`: aviso de resuelto o fallado que aparece y se desvanece sobre el tablero.
-- `ScoreCard`, `PuzzleInfo` (id, rating y temas, que se muestran recién al terminar), `MessageBox`, `MoveLog`, `MoveInput`, `ActionButtons` (Espiar, Ver solución, Siguiente o Nueva racha).
+- `ScoreCard`, `PuzzleInfo` (id, rating y temas, que se muestran recién al terminar), `MessageBox`, `MoveLog`, `ActionButtons` (Espiar, Ver solución, Siguiente o Nueva racha).
 - `SettingsPanel`: tiempo, estilo, selector de temas con nombres en castellano y opción de mostrar el nombre de cada casilla.
 - `ImportPanel`: origen de los puzzles e importación de un CSV propio.
 - `Card` / `Panel` / `Button`: contenedores y botón base.

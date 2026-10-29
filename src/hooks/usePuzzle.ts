@@ -4,13 +4,12 @@ import {
   givesMate,
   legalDestinations,
   legalMatches,
-  legalMoves,
   opposite,
   pieceAt,
   sideToMove,
   uciToSpanish,
 } from "../lib/chess";
-import { parseTypedMove, sanToSpanish } from "../lib/notation";
+import { sanToSpanish } from "../lib/notation";
 import type { Color, Feedback, LogEntry, MemTime, PieceSymbol, Puzzle, Square } from "../types";
 
 const INTRO_MS = 800; // posición inicial antes de la jugada del rival
@@ -193,7 +192,7 @@ export function usePuzzle({ initialPuzzle, memTime, endOnMistake, onFail, onSolv
   const canMove = phase === "play" && !!puzzle && sideToMove(state.fen) === state.player;
   const visible = !state.hidden || peeking;
 
-  function registerMistake(square: Square | null, feedback: Feedback) {
+  function registerMistake(square: Square, feedback: Feedback) {
     const s = state;
     if (!s.failed) onFail();
     if (endOnMistake) {
@@ -214,7 +213,7 @@ export function usePuzzle({ initialPuzzle, memTime, endOnMistake, onFail, onSolv
     }
   }
 
-  function attemptMove(from: Square, to: Square, typedPromotion?: PieceSymbol) {
+  function attemptMove(from: Square, to: Square) {
     const s = state;
     const moves = s.puzzle!.moves;
     const expected = moves[s.ply];
@@ -228,11 +227,12 @@ export function usePuzzle({ initialPuzzle, memTime, endOnMistake, onFail, onSolv
     }
 
     const isPromotion = candidates.some((m) => m.promotion);
-    let promotion = typedPromotion;
-    if (isPromotion && !promotion) {
-      // Si la solución indica una pieza, se usa esa; si no, dama.
-      promotion = expected.slice(0, 4) === from + to && expected[4] ? (expected[4] as PieceSymbol) : "q";
-    }
+    // Coronación: si la solución indica una pieza, se usa esa; si no, dama.
+    const promotion: PieceSymbol | undefined = isPromotion
+      ? expected.slice(0, 4) === from + to && expected[4]
+        ? (expected[4] as PieceSymbol)
+        : "q"
+      : undefined;
     const uci = from + to + (isPromotion ? promotion : "");
     const isLast = s.ply === moves.length - 1;
     const correct =
@@ -290,24 +290,6 @@ export function usePuzzle({ initialPuzzle, memTime, endOnMistake, onFail, onSolv
     attemptMove(selected, square);
   };
 
-  /** Devuelve true si el texto se procesó y hay que limpiar el campo. */
-  const submitTyped = (text: string): boolean => {
-    if (!canMove) return true;
-    const parsed = parseTypedMove(text, legalMoves(state.fen));
-    if ("error" in parsed) {
-      if (parsed.error === "empty") return false;
-      if (parsed.error === "format") {
-        setState({ ...state, feedback: { kind: "badFormat" } });
-        return false;
-      }
-      if (visible) setState({ ...state, selected: null, feedback: { kind: "illegalVisible" } });
-      else registerMistake(null, { kind: "wrong", reason: "illegal" });
-      return true;
-    }
-    attemptMove(parsed.from, parsed.to, parsed.promotion);
-    return true;
-  };
-
   /** Revela las piezas 2 s. Si `penalize`, cuenta como error. */
   const peek = (penalize: boolean) => {
     if (!state.hidden || phase === "done" || phase === "solution") return;
@@ -346,7 +328,6 @@ export function usePuzzle({ initialPuzzle, memTime, endOnMistake, onFail, onSolv
     start,
     clear,
     clickSquare,
-    submitTyped,
     peek,
     showSolution,
   };

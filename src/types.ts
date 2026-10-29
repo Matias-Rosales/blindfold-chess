@@ -46,7 +46,6 @@ export type Feedback =
   | { kind: "good" }
   | { kind: "opponentMoved"; san: string }
   | { kind: "illegalVisible" }
-  | { kind: "badFormat" }
   | { kind: "wrong"; reason: "illegal" | "notTheMove"; san?: string; correct?: string }
   | { kind: "peekPenalty" }
   | { kind: "solved"; clean: boolean }
