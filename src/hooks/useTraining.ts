@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useGame } from "../context/GameContext";
 import { useSettings } from "../context/SettingsContext";
 import { buildStreakQueue, pickRatedPuzzle } from "../lib/puzzles";
+import { difficultyBonus } from "../lib/rating";
 import type { Mode, Puzzle } from "../types";
 import { usePuzzle } from "./usePuzzle";
 
@@ -21,6 +22,10 @@ const NEW_STREAK: StreakState = { count: 0, queue: [], index: 0, peeks: 1, over:
 export function useTraining(mode: Mode) {
   const game = useGame();
   const { settings } = useSettings();
+  // Con una configuración más difícil el puzzle cuenta como más difícil: se gana más
+  // al resolverlo y se pierde menos al fallarlo. Los puzzles se siguen eligiendo por el
+  // rating del usuario, así la recompensa se nota en cada puzzle.
+  const bonus = difficultyBonus(settings.memTime, settings.hideStyle);
   // El primer puzzle se elige al montar. TrainingScreen vuelve a montar la sesión
   // (con `key`) cuando cambian el modo, el conjunto de puzzles o el tema.
   const [initial] = useState(() => {
@@ -42,7 +47,7 @@ export function useTraining(mode: Mode) {
     onFail: () => {
       const current = puzzle.state.puzzle;
       if (mode === "rated") {
-        if (current) game.recordRatedResult(current, 0);
+        if (current) game.recordRatedResult(current, 0, difficultyBonus(puzzle.state.memTime, settings.hideStyle));
       } else {
         setStreak((s) => ({ ...s, over: true }));
         game.recordStreak(streak.count);
@@ -52,7 +57,7 @@ export function useTraining(mode: Mode) {
       const current = puzzle.state.puzzle;
       if (mode === "rated") {
         // Un puzzle cuenta una sola vez: si ya falló, resolverlo después no suma.
-        if (clean && current) game.recordRatedResult(current, 1);
+        if (clean && current) game.recordRatedResult(current, 1, difficultyBonus(puzzle.state.memTime, settings.hideStyle));
       } else {
         setStreak((s) => ({ ...s, count: s.count + 1 }));
         game.recordStreak(streak.count + 1);
@@ -123,6 +128,7 @@ export function useTraining(mode: Mode) {
     peek,
     canPeek,
     canShowSolution,
+    bonus,
     finished: state.phase === "done",
   };
 }

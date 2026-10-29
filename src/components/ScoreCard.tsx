@@ -1,4 +1,6 @@
 import { useGame } from "../context/GameContext";
+import { useSettings } from "../context/SettingsContext";
+import { difficultyBonus, formatBonus } from "../lib/rating";
 import type { Mode } from "../types";
 import { Card } from "./ui/Card";
 import { FlameIcon } from "./ui/Icons";
@@ -6,6 +8,8 @@ import { FlameIcon } from "./ui/Icons";
 /** Rating de visualización en el modo con rating, o la racha actual en el modo racha. */
 export function ScoreCard({ mode, streakCount }: { mode: Mode; streakCount: number }) {
   const { rating, games, best, lastDelta } = useGame();
+  const { settings } = useSettings();
+  const bonus = difficultyBonus(settings.memTime, settings.hideStyle);
 
   if (mode === "streak") {
     return (
@@ -39,6 +43,13 @@ export function ScoreCard({ mode, streakCount }: { mode: Mode; streakCount: numb
       </p>
       <p className="mt-1 text-sm text-dim dark:text-dim-dk">
         {games} {games === 1 ? "puzzle jugado" : "puzzles jugados"}
+      </p>
+      <p className="mt-3 border-t border-line pt-3 text-sm dark:border-line-dk">
+        Dificultad de tu configuración:{" "}
+        <b className={`font-semibold ${bonus > 0 ? "text-good" : bonus < 0 ? "text-bad" : ""}`}>{formatBonus(bonus)}</b>
+        <span className="block text-xs text-dim dark:text-dim-dk">
+          Cada puzzle cuenta como si tuviera ese rating de más: con más dificultad ganás más y perdés menos.
+        </span>
       </p>
     </Card>
   );

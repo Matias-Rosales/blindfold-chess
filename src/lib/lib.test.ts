@@ -6,7 +6,7 @@ import { createSampler, parseCsvLine } from "./csv";
 import { sanToSpanish } from "./notation";
 import { buildStreakQueue, fromCompact, pickRatedPuzzle, STREAK_START, STREAK_STEP } from "./puzzles";
 import type { Puzzle } from "../types";
-import { expectedScore, ratingDelta } from "./rating";
+import { difficultyBonus, expectedScore, ratingDelta } from "./rating";
 
 const samples = SAMPLE_PUZZLES.map(fromCompact);
 
@@ -111,5 +111,23 @@ describe("csv", () => {
     sampler.add(["q", "", "", 1350, ""]);
     expect(sampler.buckets().get(1200)).toHaveLength(2);
     expect(sampler.buckets().get(1300)).toHaveLength(1);
+  });
+});
+
+describe("bonificación por dificultad", () => {
+  it("premia menos tiempo y piezas que desaparecen", () => {
+    expect(difficultyBonus(3, "blind")).toBe(300);
+    expect(difficultyBonus(10, "checkers")).toBe(0);
+    expect(difficultyBonus(5, "blind")).toBeGreaterThan(difficultyBonus(5, "checkers"));
+    expect(difficultyBonus(3, "checkers")).toBeGreaterThan(difficultyBonus(10, "blind"));
+    expect(difficultyBonus(0, "blind")).toBe(difficultyBonus(0, "checkers"));
+    expect(difficultyBonus(0, "blind")).toBeLessThan(0);
+  });
+
+  it("con configuración difícil se gana más y se pierde menos", () => {
+    const hard = difficultyBonus(3, "blind");
+    const easy = difficultyBonus(10, "checkers");
+    expect(ratingDelta(1500, 1500 + hard, 1, 30)).toBeGreaterThan(ratingDelta(1500, 1500 + easy, 1, 30));
+    expect(ratingDelta(1500, 1500 + hard, 0, 30)).toBeGreaterThan(ratingDelta(1500, 1500 + easy, 0, 30));
   });
 });

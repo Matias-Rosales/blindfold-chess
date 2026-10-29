@@ -3,6 +3,7 @@ import { useGame } from "../context/GameContext";
 import { useSettings } from "../context/SettingsContext";
 import { themeName } from "../data/themes";
 import { countThemes } from "../lib/puzzles";
+import { difficultyBonus, formatBonus } from "../lib/rating";
 import type { HideStyle, MemTime, PieceDisplay } from "../types";
 import { Piece } from "./board/Piece";
 import { Card } from "./ui/Card";
@@ -70,6 +71,7 @@ export function SettingsPanel() {
   const themes = countThemes(pool);
   // Si el tema guardado no existe en este conjunto, se muestra "Todos".
   const theme = themes.some((t) => t.theme === settings.theme) ? settings.theme : "";
+  const bonus = difficultyBonus(settings.memTime, settings.hideStyle);
 
   return (
     <Card title="Entrenamiento">
@@ -111,6 +113,20 @@ export function SettingsPanel() {
             ))}
           </div>
         </Field>
+
+        <div className="rounded bg-box-alt px-4 py-3 text-sm dark:bg-box-alt-dk">
+          <p>
+            Dificultad de esta configuración:{" "}
+            <b className={`text-base font-bold ${bonus > 0 ? "text-good" : bonus < 0 ? "text-bad" : "text-strong dark:text-strong-dk"}`}>
+              {formatBonus(bonus)}
+            </b>
+          </p>
+          <p className="mt-1 text-dim dark:text-dim-dk">
+            En Puzzles, cada puzzle cuenta como si tuviera ese rating de más: cuanto menos tiempo y menos pistas, más
+            sumás al resolverlo y menos perdés al fallarlo. Tiempo: 3 s +200, 5 s +100, 10 s ±0, sin ocultar −300.
+            Piezas que desaparecen: +100 más que los círculos.
+          </p>
+        </div>
 
         <Field label="Tema de los puzzles">
           <select value={theme} onChange={(e) => updateSettings({ theme: e.target.value })} className={selectClass}>

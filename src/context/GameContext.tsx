@@ -22,7 +22,8 @@ interface GameContextValue extends Progress {
   /** Cambia cuando cambia el conjunto de puzzles. */
   poolId: string;
   poolSource: PoolSource;
-  recordRatedResult: (puzzle: Puzzle, result: 0 | 1) => void;
+  /** `bonus`: bonificación por dificultad de la configuración (ver `difficultyBonus`). */
+  recordRatedResult: (puzzle: Puzzle, result: 0 | 1, bonus: number) => void;
   recordStreak: (count: number) => void;
   /** Vuelve el rating, los puzzles jugados y el récord a cero. */
   resetStats: () => void;
@@ -104,8 +105,8 @@ export function GameProvider({ storageKey, children }: { storageKey: string; chi
 
   const poolId = `${poolSource}:${pool.length}:${pool[0]?.id ?? ""}:${pool.at(-1)?.id ?? ""}`;
 
-  const recordRatedResult = (puzzle: Puzzle, result: 0 | 1) => {
-    const delta = ratingDelta(progress.rating, puzzle.rating, result, progress.games);
+  const recordRatedResult = (puzzle: Puzzle, result: 0 | 1, bonus: number) => {
+    const delta = ratingDelta(progress.rating, puzzle.rating + bonus, result, progress.games);
     setLastDelta(delta);
     setProgress((p) => ({
       ...p,
