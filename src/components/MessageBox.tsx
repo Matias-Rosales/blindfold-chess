@@ -59,13 +59,6 @@ function describe({ feedback, mode, player, hideStyle, streakCount }: MessageBox
       };
     case "illegalVisible":
       return { tone: "neutral", icon: "turn", title: "Tu turno", text: "Esa jugada no es legal." };
-    case "badFormat":
-      return {
-        tone: "neutral",
-        icon: "turn",
-        title: "No entiendo esa jugada",
-        text: "Probá con Cf7, Txe8, O-O o g5f7.",
-      };
     case "wrong": {
       const reason =
         feedback.reason === "illegal" ? "Esa jugada es ilegal en la posición real." : `${feedback.san} no es la jugada.`;

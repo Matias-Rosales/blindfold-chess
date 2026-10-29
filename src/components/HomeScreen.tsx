@@ -38,7 +38,7 @@ function ModeCard({ href, icon, title, description, stat }: ModeCardProps) {
 const STEPS = [
   { title: "Mirá", text: "La posición se muestra unos segundos y el rival hace su jugada." },
   { title: "Memorizá", text: "Elegís cuánto tiempo: 3, 5 o 10 segundos. Después las piezas se ocultan." },
-  { title: "Resolvé", text: "Tocá la casilla de origen y la de destino, o escribí la jugada: Cf7, Txe8, g5f7." },
+  { title: "Resolvé", text: "Tocá la pieza y después la casilla de destino. Si las piezas están ocultas, tocá la casilla donde estaba." },
 ];
 
 /** Pantalla de inicio: las dos formas de entrenar. */

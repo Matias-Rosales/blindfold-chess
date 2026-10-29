@@ -34,10 +34,6 @@ export function legalMatches(fen: string, from: Square, to: Square): Move[] {
   return new Chess(fen).moves({ verbose: true }).filter((m) => m.from === from && m.to === to);
 }
 
-export function legalMoves(fen: string): Move[] {
-  return new Chess(fen).moves({ verbose: true });
-}
-
 export function legalDestinations(fen: string, from: Square): Square[] {
   return new Chess(fen).moves({ square: from, verbose: true }).map((m) => m.to);
 }
