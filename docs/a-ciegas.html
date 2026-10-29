@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A ciegas · puzzles de visualización</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --ink:#17212B; --muted:#5A6774; --line:#D2D9E0;
+  --sq-l:#DCE4EC; --sq-d:#8EA3B6; --coord-l:#6F8598; --coord-d:#EEF3F7;
+  --accent:#D9952B; --accent-ink:#2A1C05; --ok:#2C8556; --bad:#C0402C;
+  --last:rgba(217,149,43,.42); --sel:rgba(217,149,43,.75); --wrong:rgba(192,64,44,.55);
+  --disc-w:#F7F8FA; --disc-b:#1C232B;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161C; --surface:#18212A; --ink:#E4EAF0; --muted:#94A2AF; --line:#2B3744;
+    --sq-l:#A7B8C8; --sq-d:#5E7488; --coord-l:#4D6276; --coord-d:#DCE5EE;
+    --accent:#E8A94A; --accent-ink:#241703; --ok:#4FB37E; --bad:#E06A55;
+    --disc-w:#F2F4F7; --disc-b:#151B21;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161C; --surface:#18212A; --ink:#E4EAF0; --muted:#94A2AF; --line:#2B3744;
+  --sq-l:#A7B8C8; --sq-d:#5E7488; --coord-l:#4D6276; --coord-d:#DCE5EE;
+  --accent:#E8A94A; --accent-ink:#241703; --ok:#4FB37E; --bad:#E06A55;
+  --disc-w:#F2F4F7; --disc-b:#151B21;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.app{max-width:1120px;margin:0 auto;padding:24px 20px 40px;display:grid;
+  grid-template-columns:minmax(0,1fr) 360px;gap:32px;align-items:start}
+@media (max-width:880px){.app{grid-template-columns:1fr;gap:20px;padding:14px 12px 32px}}
+
+/* ---------- board ---------- */
+.stage{position:sticky;top:16px}
+@media (max-width:880px){.stage{position:static}}
+.boardwrap{position:relative;width:100%;max-width:640px;margin:0 auto}
+.timer{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:10px}
+.timer span{display:block;height:100%;width:100%;background:var(--accent);transform-origin:left;transform:scaleX(0)}
+.board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);aspect-ratio:1;width:100%;
+  border-radius:6px;overflow:hidden;container-type:inline-size;user-select:none;-webkit-user-select:none;
+  touch-action:manipulation;box-shadow:0 0 0 1px var(--line)}
+.sq{position:relative;display:block;min-width:0;min-height:0;overflow:hidden;cursor:pointer;padding:0;border:0;margin:0;
+  background:var(--sq-l)}
+.sq.d{background:var(--sq-d)}
+.sq.last::after,.sq.sel::after,.sq.wrong::after{content:"";position:absolute;inset:0;pointer-events:none}
+.sq.last::after{background:var(--last)}
+.sq.sel::after{box-shadow:inset 0 0 0 4px var(--sel);background:rgba(217,149,43,.18)}
+.sq.wrong::after{background:var(--wrong)}
+.coord{position:absolute;font-size:2.1cqw;font-weight:700;line-height:1;pointer-events:none;color:var(--coord-l)}
+.sq.d .coord{color:var(--coord-d)}
+.coord.f{right:.6cqw;bottom:.5cqw}
+.coord.r{left:.6cqw;top:.6cqw}
+.board.allcoords .coord.n{display:block}
+.coord.n{display:none;left:50%;top:50%;transform:translate(-50%,-50%);font-size:2.4cqw;opacity:.55;font-weight:500}
+
+.pc{position:absolute;inset:0;display:grid;place-items:center;z-index:1}
+.glyph{font-family:"Segoe UI Symbol","Apple Symbols","DejaVu Sans","Noto Sans Symbols 2",serif;
+  font-size:10.2cqw;line-height:1;transition:opacity .45s ease,filter .45s ease}
+.glyph.w{color:#FBFBFC;-webkit-text-stroke:.28cqw #1B2128;paint-order:stroke fill}
+.glyph.b{color:#1B2128;-webkit-text-stroke:.12cqw #1B2128}
+.disc{position:absolute;left:17%;top:17%;width:66%;height:66%;border-radius:50%;opacity:0;transform:scale(.6);
+  transition:opacity .35s ease,transform .35s ease}
+.disc.w{background:var(--disc-w);box-shadow:inset 0 -.5cqw 0 rgba(0,0,0,.18),0 0 0 .25cqw #1B2128}
+.disc.b{background:var(--disc-b);box-shadow:inset 0 -.5cqw 0 rgba(255,255,255,.12),0 0 0 .25cqw #0C0F13}
+.board.hidden .glyph{opacity:0;filter:blur(1.4cqw)}
+.board.hidden.checkers .disc{opacity:1;transform:scale(1)}
+.board.peek .glyph{opacity:1!important;filter:none!important}
+.board.peek .disc{opacity:0!important}
+
+.under{max-width:640px;margin:12px auto 0;display:flex;justify-content:space-between;gap:12px;
+  color:var(--muted);font-size:14px}
+.turn{display:flex;align-items:center;gap:8px}
+.turn i{width:14px;height:14px;border-radius:50%;display:inline-block;box-shadow:0 0 0 1.5px var(--ink)}
+.turn i.w{background:#fff}.turn i.b{background:#1B2128}
+
+@media (prefers-reduced-motion:reduce){
+  .glyph,.disc{transition:none}
+}
+
+/* ---------- panel ---------- */
+.panel{display:flex;flex-direction:column;gap:18px}
+.brand h1{font-size:44px;line-height:1;margin:0;font-weight:800;letter-spacing:-.02em;
+  font-variation-settings:"opsz" 96}
+.brand p{margin:8px 0 0;color:var(--muted);max-width:34ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.modes{display:grid;grid-template-columns:1fr 1fr;background:var(--line);border-radius:10px;padding:3px;gap:3px}
+.modes button{border:0;background:transparent;border-radius:8px;padding:9px 6px;font-weight:600;cursor:pointer;color:var(--muted)}
+.modes button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+.score{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.score .big{font-size:40px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.score .small{color:var(--muted);font-size:14px;text-align:right}
+.delta.up{color:var(--ok)}.delta.down{color:var(--bad)}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field + .field{margin-top:14px}
+.field > span{font-size:14px;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:transparent;border-radius:8px;padding:7px 11px;cursor:pointer;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+select,input[type=number],input[type=text],textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted);margin-top:12px;cursor:pointer}
+
+.msg{min-height:3.2em;font-size:17px;font-weight:500}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.log{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:4px 10px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.log li b{color:var(--ink);font-weight:600}
+.typed{display:flex;gap:8px;margin-top:12px}
+.typed input{flex:1}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{border:1px solid var(--line);background:transparent;border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:600}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+details.card summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary::after{content:"+";font-weight:400;color:var(--muted)}
+details.card[open] summary::after{content:"−"}
+.note{font-size:14px;color:var(--muted);margin:10px 0 0}
+.note a{color:inherit}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:10px;display:none}
+.progress span{display:block;height:100%;width:0;background:var(--ok)}
+.pool{font-size:14px;color:var(--muted)}
+.fatal{padding:24px;max-width:560px;margin:40px auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <section class="stage" aria-label="Tablero">
+    <div class="boardwrap">
+      <div class="timer" aria-hidden="true"><span id="timerBar"></span></div>
+      <div id="board" class="board" role="grid" aria-label="Tablero de ajedrez"></div>
+    </div>
+    <div class="under">
+      <div class="turn" id="turnLbl"><i class="w"></i><span>Juegan las blancas</span></div>
+      <div id="puzzleMeta"></div>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <header class="brand">
+      <h1>A ciegas</h1>
+      <p>Mirá la posición, memorizala y resolvé el puzzle cuando las piezas desaparezcan.</p>
+    </header>
+
+    <div class="modes" role="group" aria-label="Modo">
+      <button id="modeRated" aria-pressed="true">Puzzles</button>
+      <button id="modeStreak" aria-pressed="false">Racha</button>
+    </div>
+
+    <div class="card">
+      <div class="score">
+        <div><div class="big" id="scoreBig">1500</div></div>
+        <div class="small" id="scoreSmall">Tu rating de visualización</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="msg" id="msg" aria-live="polite">Cargando…</div>
+      <ol class="log" id="log"></ol>
+      <form class="typed" id="typedForm" autocomplete="off">
+        <input type="text" id="typed" placeholder="Escribí la jugada: Cf7, Txe8, g5f7" aria-label="Escribir jugada">
+        <button class="btn" type="submit">Jugar</button>
+      </form>
+      <div class="actions">
+        <button class="btn" id="btnPeek">Espiar 2 s</button>
+        <button class="btn" id="btnSolution">Ver solución</button>
+        <button class="btn primary" id="btnNext">Siguiente</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <span>Tiempo para memorizar</span>
+        <div class="seg" id="segMem">
+          <button data-v="3">3 s</button><button data-v="5">5 s</button><button data-v="10">10 s</button><button data-v="0">No ocultar</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>Después del tiempo, las piezas…</span>
+        <div class="seg" id="segStyle">
+          <button data-v="blind">Desaparecen</button><button data-v="checkers">Se vuelven fichas</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>Tema</span>
+        <select id="themeSel"></select>
+      </div>
+      <label class="check"><input type="checkbox" id="chkCoords"> Mostrar el nombre de cada casilla</label>
+    </div>
+
+    <details class="card" id="importBox">
+      <summary>Importar puzzles de Lichess</summary>
+      <p class="note">Descargá la base de puzzles desde <a href="https://database.lichess.org/#puzzles" target="_blank" rel="noopener">database.lichess.org</a>. Viene comprimida (.csv.zst): descomprimila con 7-Zip o con <code>zstd -d</code> y elegí el .csv acá. La página lee el archivo en tu navegador y se queda con una selección repartida por rating.</p>
+      <div class="row2" style="margin-top:12px">
+        <label class="field"><span>Rating mínimo</span><input type="number" id="impMin" value="600" step="100"></label>
+        <label class="field"><span>Rating máximo</span><input type="number" id="impMax" value="2600" step="100"></label>
+      </div>
+      <label class="field" style="margin-top:12px"><span>Cantidad a guardar</span>
+        <select id="impCap"><option value="1000">1.000</option><option value="3000" selected>3.000</option><option value="6000">6.000</option></select>
+      </label>
+      <label class="check"><input type="checkbox" id="impPopular" checked> Solo puzzles populares y muy jugados</label>
+      <input type="file" id="impFile" accept=".csv,text/csv" style="margin-top:12px;width:100%">
+      <div class="progress" id="impProg"><span></span></div>
+      <p class="note" id="impMsg"></p>
+      <p class="note">También podés pegar líneas del CSV:</p>
+      <textarea id="impPaste" rows="3" placeholder="00sHx,q3k1nr/1pp1nQpp/3p4/1P2p3/4P3/B1PP1b2/B5PP/5K2 b k - 0 17,e8d7 a2e6 d7d8 f7f8,1760,…"></textarea>
+      <div class="actions"><button class="btn" id="impPasteBtn">Agregar pegados</button><button class="btn" id="impReset">Volver a los de ejemplo</button></div>
+      <p class="pool" id="poolInfo"></p>
+    </details>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* Puzzles de ejemplo (formato Lichess: la primera jugada es del rival) */
+const SAMPLES=[["ej01","2r3k1/1b3ppp/8/8/8/2B5/5PPP/4R1K1 b - - 0 1","c8c3 e1e8",900,"mateIn1 backRankMate"],["ej02","7k/1p2N1p1/8/q7/8/3R4/P4PPP/6K1 b - - 0 1","a5a2 d3h3",1150,"mateIn1 anastasiaMate"],["ej03","6k1/5ppp/8/8/P5N1/5n2/1r6/7K w - - 0 1","g4e5 b2h2",1100,"mateIn1 arabianMate"],["ej04","5rk1/p4ppp/5n2/8/8/3B3Q/5PPP/6K1 b - - 0 1","f6g4 h3h7",950,"mateIn1 kingsideAttack"],["ej05","4r2k/p5pp/1q5N/3Q4/8/8/PP3PPP/6K1 b - - 0 1","b6b2 d5g8 e8g8 h6f7",1650,"mateIn2 smotheredMate sacrifice"],["ej06","7k/R2n4/8/8/8/8/5PPP/1R4K1 b - - 0 1","d7c5 b1b8",1050,"mateIn1 backRankMate"],["ej07","3r2k1/5ppp/5n2/8/8/6Q1/1B3PPP/6K1 b - - 0 1","f6e4 g3g7",1000,"mateIn1 kingsideAttack"],["ej08","6k1/2p2ppp/8/8/8/8/3p1PPP/2R3K1 w - - 0 1","c1c7 d2d1q",1000,"mateIn1 promotion backRankMate"],["ej09","4r1k1/3q1ppp/4n3/8/8/8/4QPPP/4R1K1 b - - 0 1","e6d4 e2e8 d7e8 e1e8",1450,"mateIn2 backRankMate sacrifice"],["ej10","4r1k1/pp3Npp/8/8/2Q5/8/PP4PP/5RK1 b - - 0 1","b7b6 f7h6 g8h8 c4g8 e8g8 h6f7",2050,"mateIn3 smotheredMate sacrifice doubleCheck"],["ej11","6k1/5ppp/8/8/6n1/3N4/6PP/6RK w - - 0 1","d3e5 g4f2",1200,"mateIn1 smotheredMate"],["ej12","k7/8/1K6/7p/8/8/8/3R4 b - - 0 1","h5h4 d1d8",700,"mateIn1 endgame"],["ej13","7k/8/6K1/p7/8/8/2Q5/8 b - - 0 1","a5a4 c2c8",650,"mateIn1 endgame"],["ej14","6k1/ppp2ppp/3r4/8/7q/8/PPQ1nPPP/5R1K w - - 0 1","c2c7 h4h2 h1h2 d6h6",1800,"mateIn2 anastasiaMate sacrifice"],["ej15","4r1k1/5ppp/8/4n3/8/8/P2P1P2/3QKB2 w - - 0 1","a2a3 e5f3",1250,"mateIn1 doubleCheck discoveredAttack"],["ej16","r4rk1/pp2bp1p/5Pp1/8/7Q/8/PP3PPP/6K1 b - - 0 1","e7b4 h4h6 b7b6 h6g7",1550,"mateIn2 kingsideAttack quietMove"],["ej17","2kr4/pp3ppp/2n2n2/8/5B2/5Q2/PPP2PPP/5BK1 b - - 0 1","f6d7 f3c6 b7c6 f1a6",1750,"mateIn2 bodenMate sacrifice"]];
+
+const THEME_ES={mate:"Mate",mateIn1:"Mate en 1",mateIn2:"Mate en 2",mateIn3:"Mate en 3",mateIn4:"Mate en 4",mateIn5:"Mate en 5 o más",
+ backRankMate:"Mate en la última fila",smotheredMate:"Mate de la coz",anastasiaMate:"Mate de Anastasia",arabianMate:"Mate árabe",bodenMate:"Mate de Boden",
+ doubleBishopMate:"Mate de dos alfiles",hookMate:"Mate del gancho",dovetailMate:"Mate de la cola de golondrina",
+ fork:"Doble ataque",pin:"Clavada",skewer:"Enfilada",discoveredAttack:"Ataque descubierto",doubleCheck:"Jaque doble",sacrifice:"Sacrificio",
+ deflection:"Desviación",attraction:"Atracción",clearance:"Despeje",interference:"Interferencia",intermezzo:"Jugada intermedia",
+ hangingPiece:"Pieza colgada",trappedPiece:"Pieza atrapada",capturingDefender:"Captura del defensor",xRayAttack:"Rayos X",
+ promotion:"Coronación",underPromotion:"Subpromoción",advancedPawn:"Peón avanzado",quietMove:"Jugada tranquila",defensiveMove:"Jugada defensiva",
+ kingsideAttack:"Ataque al flanco de rey",queensideAttack:"Ataque al flanco de dama",exposedKing:"Rey expuesto",zugzwang:"Zugzwang",
+ oneMove:"Una jugada",short:"Corto",long:"Largo",veryLong:"Muy largo",opening:"Apertura",middlegame:"Medio juego",endgame:"Final",
+ rookEndgame:"Final de torres",pawnEndgame:"Final de peones",queenEndgame:"Final de damas",bishopEndgame:"Final de alfiles",knightEndgame:"Final de caballos",
+ crushing:"Ventaja decisiva",advantage:"Ventaja",equality:"Igualdad",master:"Partidas de maestros",castling:"Enroque",enPassant:"Captura al paso"};
+
+const LS_STATE="aciegas.state.v1", LS_POOL="aciegas.pool.v1";
+const GLYPH={k:"\u265A",q:"\u265B",r:"\u265C",b:"\u265D",n:"\u265E",p:"\u265F"};
+const FILES="abcdefgh";
+
+const $=id=>document.getElementById(id);
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function fetchStored(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null}catch(e){return null}}
+
+let S=Object.assign({rating:1500,games:0,best:0,mem:5,style:"blind",theme:"",coords:false,mode:"rated",recent:[]},fetchStored(LS_STATE)||{});
+function save(){store(LS_STATE,S)}
+
+let imported=fetchStored(LS_POOL);
+let pool=[];
+function rebuildPool(){
+  const src=(imported&&imported.length)?imported:SAMPLES;
+  pool=src.map(a=>({id:a[0],fen:a[1],moves:a[2].trim().split(/\s+/),rating:+a[3],themes:(a[4]||"").split(/\s+/).filter(Boolean)}));
+  $("poolInfo").textContent=(imported&&imported.length)
+    ? `Usando ${imported.length.toLocaleString("es-AR")} puzzles importados de Lichess.`
+    : `Usando ${SAMPLES.length} puzzles de ejemplo. Importá la base de Lichess para tener miles.`;
+  buildThemes();
+}
+
+/* ---------- estado del puzzle ---------- */
+let P=null, game=null, ply=0, player="w", orient="w";
+let hidden=false, failed=false, done=false, busy=true, selected=null, lastMove=null, wrongSq=null;
+let timers=[], log=[], peekTimer=null;
+let streak={count:0,queue:[],idx:0,peeks:1,over:false};
+let lastDelta=null;
+
+function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+function later(fn,ms){timers.push(setTimeout(fn,ms));}
+
+/* ---------- tablero ---------- */
+const boardEl=$("board");
+const sqEls={};
+function buildBoard(){
+  boardEl.innerHTML="";
+  for(let row=0;row<8;row++)for(let col=0;col<8;col++){
+    const f=orient==="w"?col:7-col, r=orient==="w"?7-row:row;
+    const name=FILES[f]+(r+1);
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="sq"+(((f+r)%2===0)?" d":"");
+    b.dataset.sq=name;
+    b.setAttribute("aria-label",name);
+    let html="";
+    if(row===7) html+=`<span class="coord f">${FILES[f]}</span>`;
+    if(col===0) html+=`<span class="coord r">${r+1}</span>`;
+    html+=`<span class="coord n">${name}</span><span class="pc"></span>`;
+    b.innerHTML=html;
+    b.addEventListener("click",()=>onSquare(name));
+    boardEl.appendChild(b);
+    sqEls[name]=b;
+  }
+}
+function render(){
+  for(const name in sqEls){
+    const el=sqEls[name], pc=game?game.get(name):null, holder=el.querySelector(".pc");
+    const key=pc?pc.color+pc.type:"";
+    if(holder.dataset.k!==key){
+      holder.dataset.k=key;
+      holder.innerHTML=pc?`<span class="glyph ${pc.color}">${GLYPH[pc.type]}\uFE0E</span><span class="disc ${pc.color}"></span>`:"";
+    }
+    el.classList.toggle("last",!!lastMove&&(lastMove[0]===name||lastMove[1]===name));
+    el.classList.toggle("sel",selected===name);
+    el.classList.toggle("wrong",wrongSq===name);
+  }
+  boardEl.classList.toggle("hidden",hidden);
+  boardEl.classList.toggle("checkers",S.style==="checkers");
+  boardEl.classList.toggle("allcoords",!!S.coords);
+  const t=game?game.turn():"w";
+  $("turnLbl").innerHTML=`<i class="${t}"></i><span>${done?"Terminado":(t==="w"?"Juegan las blancas":"Juegan las negras")}</span>`;
+  renderLog();
+}
+
+/* ---------- notación en castellano ---------- */
+function sanES(san){return san.replace(/[NBRQK]/g,c=>({N:"C",B:"A",R:"T",Q:"D",K:"R"})[c]).replace(/=([CATD])/,"=$1");}
+function renderLog(){
+  $("log").innerHTML=log.map(m=>`<li>${m.num}${m.color==="w"?".":"…"} <b>${sanES(m.san)}</b></li>`).join("");
+}
+function applyUci(uci){
+  const fullmove=+game.fen().split(" ")[5], color=game.turn();
+  const m=game.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||"q"});
+  if(m){log.push({num:fullmove,color,san:m.san});lastMove=[m.from,m.to];}
+  return m;
+}
+
+/* ---------- mensajes y puntaje ---------- */
+function say(t,cls){const m=$("msg");m.textContent=t;m.className="msg"+(cls?" "+cls:"");}
+function renderScore(){
+  if(S.mode==="rated"){
+    let d="";
+    if(lastDelta!==null&&lastDelta!==0) d=` <span class="delta ${lastDelta>0?"up":"down"}">${lastDelta>0?"+":""}${lastDelta}</span>`;
+    $("scoreBig").innerHTML=Math.round(S.rating)+d;
+    $("scoreSmall").textContent=`Tu rating de visualización · ${S.games} puzzles`;
+  }else{
+    $("scoreBig").textContent=streak.count;
+    $("scoreSmall").textContent=`Racha actual · récord ${S.best}`;
+  }
+}
+function renderButtons(){
+  const active=!done&&P;
+  $("btnPeek").disabled=!active||!hidden;
+  $("btnPeek").textContent=S.mode==="streak"?`Espiar 2 s (${streak.peeks} disponible${streak.peeks===1?"":"s"})`:"Espiar 2 s";
+  if(S.mode==="streak"&&streak.peeks<=0)$("btnPeek").disabled=true;
+  $("btnSolution").disabled=!P||ply>=P.moves.length||(done&&!failed);
+  const nb=$("btnNext");
+  if(S.mode==="streak"){nb.textContent="Nueva racha";nb.disabled=!streak.over;}
+  else{nb.textContent="Siguiente";nb.disabled=false;}
+}
+
+/* ---------- elección de puzzles ---------- */
+function themeOk(p){return !S.theme||p.themes.includes(S.theme);}
+function pickRated(){
+  let cands=pool.filter(themeOk); if(!cands.length)cands=pool;
+  const recent=new Set(S.recent.slice(-Math.min(40,Math.max(0,cands.length-3))));
+  for(let w=150;w<=3000;w+=150){
+    const c=cands.filter(p=>Math.abs(p.rating-S.rating)<=w&&!recent.has(p.id));
+    if(c.length)return c[Math.floor(Math.random()*c.length)];
+  }
+  return cands[Math.floor(Math.random()*cands.length)];
+}
+function buildStreakQueue(){
+  let c=pool.filter(themeOk); if(!c.length)c=pool;
+  return c.map(p=>({p,k:p.rating+Math.random()*180})).sort((a,b)=>a.k-b.k).map(x=>x.p);
+}
+
+/* ---------- flujo ---------- */
+function startPuzzle(p){
+  clearTimers();clearTimeout(peekTimer);boardEl.classList.remove("peek");
+  P=p;game=new Chess(p.fen);ply=0;log=[];hidden=false;failed=false;done=false;busy=true;
+  selected=null;lastMove=null;wrongSq=null;
+  player=game.turn()==="w"?"b":"w";
+  if(orient!==player||!Object.keys(sqEls).length){orient=player;buildBoard();}
+  $("puzzleMeta").textContent=`Puzzle ${p.id} · ${p.rating}`;
+  resetTimerBar();
+  render();renderButtons();renderScore();
+  say("Mirá la posición. Ahora juega el rival.");
+  later(()=>{
+    applyUci(P.moves[0]);ply=1;render();
+    const mem=+S.mem;
+    if(mem>0){
+      busy=false;
+      say(`Juegan las ${player==="w"?"blancas":"negras"}. Memorizá: ${mem} s.`);
+      runTimerBar(mem);
+      later(()=>{hidden=true;render();renderButtons();say(S.style==="checkers"?"Ahora solo ves fichas. Encontrá la mejor jugada.":"Las piezas desaparecieron. Encontrá la mejor jugada.");},mem*1000);
+    }else{busy=false;say(`Juegan las ${player==="w"?"blancas":"negras"}. Encontrá la mejor jugada.`);}
+    renderButtons();
+  },800);
+}
+const bar=$("timerBar");
+function resetTimerBar(){bar.style.transition="none";bar.style.transform="scaleX(0)";}
+function runTimerBar(sec){
+  bar.style.transition="none";bar.style.transform="scaleX(1)";
+  void bar.offsetWidth;
+  bar.style.transition=`transform ${sec}s linear`;bar.style.transform="scaleX(0)";
+}
+
+function nextPuzzle(){
+  if(S.mode==="rated"){startPuzzle(pickRated());return;}
+  if(streak.over||!streak.queue.length){streak={count:0,queue:buildStreakQueue(),idx:0,peeks:1,over:false};}
+  if(streak.idx>=streak.queue.length){
+    streak.over=true;done=true;say(`Completaste todos los puzzles disponibles. Racha final: ${streak.count}.`,"ok");renderButtons();return;
+  }
+  startPuzzle(streak.queue[streak.idx++]);
+}
+
+function onSquare(name){
+  if(!P||done||busy||game.turn()!==player)return;
+  const pc=game.get(name);
+  const visible=!hidden||boardEl.classList.contains("peek");
+  if(!selected){
+    if(visible&&(!pc||pc.color!==player))return;
+    selected=name;render();return;
+  }
+  if(selected===name){selected=null;render();return;}
+  if(visible&&pc&&pc.color===player){selected=name;render();return;}
+  const from=selected;selected=null;
+  tryMove(from,name);
+}
+
+function legalMatch(from,to){
+  return game.moves({verbose:true}).filter(m=>m.from===from&&m.to===to);
+}
+function tryMove(from,to,promo){
+  const expected=P.moves[ply];
+  const cands=legalMatch(from,to);
+  if(!cands.length){
+    if(!hidden){say("Esa jugada no es legal.");render();return;}
+    flashWrong(to);
+    onWrong("Esa jugada es ilegal en la posición real.");
+    return;
+  }
+  let promotion=promo;
+  if(cands[0].promotion&&!promotion){promotion=(expected.slice(0,4)===from+to&&expected[4])?expected[4]:"q";}
+  const uci=from+to+(cands[0].promotion?promotion:"");
+  const isLast=ply===P.moves.length-1;
+  const t=new Chess(game.fen());
+  const tm=t.move({from,to,promotion:promotion||"q"});
+  const correct=uci.slice(0,4)===expected.slice(0,4)&&(!cands[0].promotion||(expected[4]||"q")===promotion);
+  if(correct||(isLast&&t.in_checkmate())){
+    applyUci(uci);ply++;render();
+    if(ply>=P.moves.length){onSolved();return;}
+    say("Bien. Sigue el rival…","ok");busy=true;
+    later(()=>{
+      const r=applyUci(P.moves[ply]);ply++;busy=false;render();renderButtons();
+      say(r?`${player==="w"?"Las negras":"Las blancas"} jugaron ${sanES(r.san)}. Seguí.`:"Seguí.");
+    },550);
+    return;
+  }
+  flashWrong(to);
+  onWrong(`${tm?sanES(tm.san):uci} no es la jugada.`);
+}
+function flashWrong(sq){
+  wrongSq=sq;render();
+  later(()=>{wrongSq=null;render();},900);
+}
+
+function sanOf(uci){
+  const t=new Chess(game.fen());const m=t.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||"q"});
+  return m?sanES(m.san):uci;
+}
+
+function onWrong(text){
+  if(S.mode==="streak"){
+    endStreak(text);return;
+  }
+  if(!failed){failed=true;rate(0);}
+  say(text+" Podés seguir intentando o ver la solución.","bad");
+  renderButtons();
+}
+function endStreak(text){
+  streak.over=true;failed=true;done=true;busy=false;hidden=false;
+  if(streak.count>S.best){S.best=streak.count;save();}
+  const sol=P.moves[ply]?" La jugada era "+sanOf(P.moves[ply])+".":"";
+  say(`${text}${sol} Racha terminada: ${streak.count}.`,"bad");
+  render();renderScore();renderButtons();
+}
+function onSolved(){
+  done=true;busy=false;hidden=false;
+  if(S.mode==="rated"){
+    if(!failed){rate(1);say("¡Resuelto!","ok");}
+    else say("Resuelto, pero ya había contado como error.","ok");
+  }else{
+    streak.count++;if(streak.count>S.best)S.best=streak.count;
+    say(`¡Resuelto! Racha: ${streak.count}.`,"ok");
+    later(nextPuzzle,1100);
+  }
+  save();resetTimerBar();render();renderScore();renderButtons();
+}
+function rate(score){
+  const exp=1/(1+Math.pow(10,(P.rating-S.rating)/400));
+  const K=S.games<20?48:28;
+  const d=Math.round(K*(score-exp));
+  S.rating=Math.max(100,S.rating+d);S.games++;lastDelta=d;
+  S.recent.push(P.id);if(S.recent.length>80)S.recent=S.recent.slice(-80);
+  save();renderScore();
+}
+
+function showSolution(){
+  if(!P||ply>=P.moves.length||(done&&!failed))return;
+  if(S.mode==="streak"&&!streak.over)endStreak("Viste la solución.");
+  else if(S.mode==="rated"&&!failed){failed=true;rate(0);}
+  clearTimers();resetTimerBar();
+  done=true;busy=true;hidden=false;selected=null;wrongSq=null;render();
+  $("btnSolution").disabled=true;
+  say("Solución:");
+  const tail=S.mode==="streak"?` Racha terminada: ${streak.count}.`:"";
+  const step=()=>{
+    if(ply>=P.moves.length){busy=false;say(`Solución: ${log.slice(1).map(m=>sanES(m.san)).join(" ")}.${tail}`);render();renderButtons();return;}
+    applyUci(P.moves[ply]);ply++;render();later(step,750);
+  };
+  later(step,400);
+}
+
+function peek(){
+  if(!P||done||!hidden)return;
+  if(S.mode==="streak"){if(streak.peeks<=0)return;streak.peeks--;}
+  else if(!failed){failed=true;rate(0);say("Espiar cuenta como error en este puzzle.","bad");}
+  boardEl.classList.add("peek");
+  clearTimeout(peekTimer);
+  peekTimer=setTimeout(()=>boardEl.classList.remove("peek"),2000);
+  renderButtons();
+}
+
+/* ---------- jugada escrita ---------- */
+function parseTyped(txt){
+  let s=txt.trim().replace(/[+#!?]/g,"").replace(/^0-0-0$/,"O-O-O").replace(/^0-0$/,"O-O");
+  if(!s)return {err:"empty"};
+  const legal=game.moves({verbose:true});
+  if(/^[a-h][1-8][a-h][1-8][qrbnQRBNdtac]?$/.test(s)){
+    let pr=s[4]?s[4].toLowerCase():"";pr=({d:"q",t:"r",a:"b",c:"n"})[pr]||pr;
+    return {from:s.slice(0,2),to:s.slice(2,4),promo:pr||undefined};
+  }
+  const clean=x=>x.replace(/[+#]/g,"");
+  const tryForms=[];
+  const es={C:"N",A:"B",T:"R",D:"Q"};
+  let base=s.replace(/^([CATD])/,c=>es[c]).replace(/=([CATD])$/,(a,c)=>"="+es[c]);
+  tryForms.push(base);
+  if(/^R/.test(s))tryForms.push("K"+s.slice(1));
+  tryForms.push(base.replace(/=?([NBRQ])$/,"=$1"));
+  if(!/^(O-O(-O)?|[NBRQK]?[a-h]?[1-8]?x?[a-h][1-8](=?[NBRQ])?)$/.test(base)&&!/^R/.test(s))return {err:"format"};
+  for(const f of tryForms){
+    const hit=legal.find(m=>clean(m.san)===f||clean(m.san).replace("x","")===f.replace("x",""));
+    if(hit)return {from:hit.from,to:hit.to,promo:hit.promotion};
+  }
+  return {err:"illegal"};
+}
+$("typedForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const inp=$("typed");
+  if(!P||done||busy||game.turn()!==player){inp.value="";return;}
+  const r=parseTyped(inp.value);
+  if(r.err==="empty")return;
+  if(r.err==="format"){say("No entiendo esa jugada. Probá con Cf7, Txe8, O-O o g5f7.");return;}
+  inp.value="";selected=null;
+  if(r.err==="illegal"){
+    if(!hidden){say("Esa jugada no es legal.");return;}
+    onWrong("Esa jugada es ilegal en la posición real.");return;
+  }
+  tryMove(r.from,r.to,r.promo);
+});
+
+/* ---------- controles ---------- */
+function setSeg(id,val){document.querySelectorAll(`#${id} button`).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===String(val))));}
+document.querySelectorAll("#segMem button").forEach(b=>b.addEventListener("click",()=>{S.mem=+b.dataset.v;setSeg("segMem",S.mem);save();say(`Listo: ${S.mem?S.mem+" s para memorizar":"sin ocultar"} desde el próximo puzzle.`);}));
+document.querySelectorAll("#segStyle button").forEach(b=>b.addEventListener("click",()=>{S.style=b.dataset.v;setSeg("segStyle",S.style);save();render();}));
+$("chkCoords").addEventListener("change",e=>{S.coords=e.target.checked;save();render();});
+$("themeSel").addEventListener("change",e=>{S.theme=e.target.value;save();if(S.mode==="streak"){streak.over=true;}nextPuzzle();});
+$("btnNext").addEventListener("click",nextPuzzle);
+$("btnSolution").addEventListener("click",showSolution);
+$("btnPeek").addEventListener("click",peek);
+function setMode(m){
+  S.mode=m;save();lastDelta=null;
+  $("modeRated").setAttribute("aria-pressed",String(m==="rated"));
+  $("modeStreak").setAttribute("aria-pressed",String(m==="streak"));
+  streak={count:0,queue:[],idx:0,peeks:1,over:true};
+  nextPuzzle();
+}
+$("modeRated").addEventListener("click",()=>setMode("rated"));
+$("modeStreak").addEventListener("click",()=>setMode("streak"));
+
+function buildThemes(){
+  const counts={};
+  pool.forEach(p=>p.themes.forEach(t=>counts[t]=(counts[t]||0)+1));
+  const list=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const sel=$("themeSel");
+  sel.innerHTML=`<option value="">Todos los temas</option>`+list.map(t=>`<option value="${t}">${THEME_ES[t]||t} (${counts[t].toLocaleString("es-AR")})</option>`).join("");
+  if(S.theme&&!counts[S.theme])S.theme="";
+  sel.value=S.theme;
+}
+
+/* ---------- importación ---------- */
+function parseLine(line,opt){
+  const f=line.split(",");
+  if(f.length<8||f[0]==="PuzzleId")return null;
+  const rating=+f[3];if(!rating||!f[1]||!f[2])return null;
+  if(rating<opt.min||rating>opt.max)return null;
+  if(opt.popular&&(+f[5]<70||+f[6]<300))return null;
+  return [f[0],f[1],f[2],rating,f[7]];
+}
+function makeSampler(opt){
+  const nb=Math.max(1,Math.ceil((opt.max-opt.min+1)/100));
+  const cap=Math.ceil(opt.cap/nb);
+  const buckets=Array.from({length:nb},()=>({n:0,a:[]}));
+  return {
+    add(row){const b=buckets[Math.min(nb-1,Math.floor((row[3]-opt.min)/100))];b.n++;
+      if(b.a.length<cap)b.a.push(row);else{const j=Math.floor(Math.random()*b.n);if(j<cap)b.a[j]=row;}},
+    result(){return buckets.flatMap(b=>b.a);}
+  };
+}
+function importOpts(){
+  const min=+$("impMin").value||0,max=+$("impMax").value||4000;
+  return {min:Math.min(min,max),max:Math.max(min,max),cap:+$("impCap").value,popular:$("impPopular").checked};
+}
+function finishImport(rows,read){
+  if(!rows.length){$("impMsg").textContent="No encontré puzzles válidos con esos filtros. Revisá que sea el CSV de Lichess descomprimido.";return;}
+  imported=rows;
+  const ok=store(LS_POOL,imported);
+  $("impMsg").textContent=`Listo: ${rows.length.toLocaleString("es-AR")} puzzles elegidos de ${read.toLocaleString("es-AR")} leídos.`+(ok?"":" No se pudieron guardar en el navegador: se usarán solo en esta sesión.");
+  S.recent=[];save();rebuildPool();streak.over=true;nextPuzzle();
+}
+$("impFile").addEventListener("change",async e=>{
+  const file=e.target.files[0];if(!file)return;
+  if(/\.zst$/i.test(file.name)){$("impMsg").textContent="Ese archivo está comprimido (.zst). Descomprimilo primero y elegí el .csv.";return;}
+  const opt=importOpts(),smp=makeSampler(opt);
+  const prog=$("impProg"),bar2=prog.firstElementChild;prog.style.display="block";
+  $("impMsg").textContent="Leyendo…";
+  let read=0,done=0,rest="";
+  try{
+    const reader=file.stream().pipeThrough(new TextDecoderStream()).getReader();
+    let lastUi=0;
+    for(;;){
+      const {value,done:end}=await reader.read();
+      if(end)break;
+      done+=value.length;
+      const lines=(rest+value).split("\n");rest=lines.pop();
+      for(const l of lines){if(!l||l.startsWith("PuzzleId"))continue;const row=parseLine(l,opt);read++;if(row)smp.add(row);}
+      const now=performance.now();
+      if(now-lastUi>120){lastUi=now;bar2.style.width=Math.min(100,done/file.size*100)+"%";$("impMsg").textContent=`Leyendo… ${read.toLocaleString("es-AR")} líneas`;}
+    }
+    if(rest){const row=parseLine(rest,opt);if(row)smp.add(row);}
+    bar2.style.width="100%";
+    finishImport(smp.result(),read);
+  }catch(err){$("impMsg").textContent="No pude leer el archivo: "+err.message;}
+});
+$("impPasteBtn").addEventListener("click",()=>{
+  const opt=Object.assign(importOpts(),{min:0,max:5000,popular:false});
+  const rows=$("impPaste").value.split(/\r?\n/).map(l=>parseLine(l.trim(),opt)).filter(Boolean)
+    .filter(r=>{try{return new Chess(r[1]).fen()&&true}catch(e){return false}});
+  if(!rows.length){$("impMsg").textContent="No reconocí ninguna línea. Pegá líneas completas del CSV de Lichess.";return;}
+  const base=(imported&&imported.length)?imported:[];
+  const ids=new Set(base.map(r=>r[0]));
+  const merged=base.concat(rows.filter(r=>!ids.has(r[0])));
+  $("impPaste").value="";
+  finishImport(merged,rows.length);
+});
+$("impReset").addEventListener("click",()=>{
+  imported=null;try{localStorage.removeItem(LS_POOL)}catch(e){}
+  $("impMsg").textContent="Volviste a los puzzles de ejemplo.";
+  S.recent=[];save();rebuildPool();streak.over=true;nextPuzzle();
+});
+
+/* ---------- inicio ---------- */
+function boot(){
+  setSeg("segMem",S.mem);setSeg("segStyle",S.style);$("chkCoords").checked=!!S.coords;
+  $("modeRated").setAttribute("aria-pressed",String(S.mode==="rated"));
+  $("modeStreak").setAttribute("aria-pressed",String(S.mode==="streak"));
+  rebuildPool();
+  streak.over=true;
+  nextPuzzle();
+}
+function fatal(){
+  $("app").innerHTML=`<div class="fatal"><h2>No se pudo cargar el motor de reglas</h2><p>La página necesita la librería chess.js. Revisá tu conexión y recargá.</p></div>`;
+}
+if(typeof Chess==="undefined"){
+  const s=document.createElement("script");
+  s.src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.js";
+  s.onload=()=>typeof Chess==="undefined"?fatal():boot();
+  s.onerror=fatal;document.head.appendChild(s);
+}else boot();
+})();
+</script>
+</body>
+</html>

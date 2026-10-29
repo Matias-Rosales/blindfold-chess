@@ -1,111 +1,63 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/*
+  Paleta inspirada en Lichess: fondo con degradé cálido, cajas con sombra suave,
+  azul para las acciones principales y tablero marrón clásico.
+  Cada color tiene su par "-dk" para el modo oscuro, que se aplica con `dark:`.
+*/
+@theme {
+  --font-sans: "Noto Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --color-page: #ecebe8;
+  --color-page-dk: #161512;
+  --color-box: #ffffff;
+  --color-box-dk: #262421;
+  --color-box-alt: #f7f6f5;
+  --color-box-alt-dk: #302e2c;
+  --color-line: #d9d9d9;
+  --color-line-dk: #3d3a37;
+  --color-ink: #4d4d4d;
+  --color-ink-dk: #bababa;
+  --color-strong: #222222;
+  --color-strong-dk: #e2e2e2;
+  --color-dim: #787878;
+  --color-dim-dk: #8f8b87;
+  --color-primary: #1b78d0;
+  --color-primary-dk: #3692e7;
+  --color-good: #629924;
+  --color-bad: #cc3333;
+  --color-brag: #d85000;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --color-sq-light: #f0d9b5;
+  --color-sq-dark: #b58863;
+
+  --animate-countdown: countdown 1s linear forwards;
+  --animate-pop-fade: pop-fade 1.6s ease-out forwards;
+
+  @keyframes countdown {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+  }
+  @keyframes pop-fade {
+    0% { transform: scale(0.6); opacity: 0; }
+    20% { transform: scale(1); opacity: 1; }
+    70% { opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+@layer base {
+  body {
+    @apply min-h-screen bg-page font-sans text-ink antialiased dark:bg-page-dk dark:text-ink-dk;
+    /* El degradé de la parte de arriba de Lichess */
+    background-image: linear-gradient(to bottom, hsl(37 12% 84%), hsl(37 10% 92%) 116px, transparent 116px);
   }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-image: linear-gradient(to bottom, hsl(37 12% 16%), hsl(37 10% 8%) 116px, transparent 116px);
+    }
   }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  :focus-visible {
+    @apply outline-3 outline-offset-2 outline-primary dark:outline-primary-dk;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }
