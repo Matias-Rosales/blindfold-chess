@@ -4,7 +4,8 @@ import { SAMPLE_PUZZLES } from "../data/samples";
 import { applyUci, boardSquares, givesMate, legalMoves } from "./chess";
 import { createSampler, parseCsvLine } from "./csv";
 import { parseTypedMove, sanToSpanish } from "./notation";
-import { buildStreakQueue, fromCompact, pickRatedPuzzle } from "./puzzles";
+import { buildStreakQueue, fromCompact, pickRatedPuzzle, STREAK_START, STREAK_STEP } from "./puzzles";
+import type { Puzzle } from "../types";
 import { expectedScore, ratingDelta } from "./rating";
 
 const samples = SAMPLE_PUZZLES.map(fromCompact);
@@ -103,9 +104,28 @@ describe("selección", () => {
     const picked = pickRatedPuzzle(samples, 1500, [], "bodenMate");
     expect(picked!.id).toBe("ej17");
   });
-  it("la racha va de menor a mayor rating, aproximadamente", () => {
-    const queue = buildStreakQueue(samples, "", () => 0);
-    expect(queue[0].rating).toBe(650);
+  it("la racha sube de dificultad con cada puzzle", () => {
+    // 150 puzzles por tramo de 100, como la base generada.
+    const pool: Puzzle[] = [];
+    for (let r = 300; r < 3300; r += 2) pool.push({ id: `p${r}`, fen: "", moves: [], rating: r, themes: [] });
+    for (let run = 0; run < 20; run++) {
+      const queue = buildStreakQueue(pool, "");
+      expect(queue[0].rating).toBeGreaterThanOrEqual(STREAK_START);
+      expect(queue[0].rating).toBeLessThan(STREAK_START + 100);
+      // El puzzle número n está cerca de 600 + 50·n.
+      queue.forEach((p, n) => {
+        expect(p.rating).toBeGreaterThanOrEqual(STREAK_START + STREAK_STEP * n);
+        expect(p.rating).toBeLessThan(STREAK_START + STREAK_STEP * n + 100);
+      });
+      expect(new Set(queue.map((p) => p.id)).size).toBe(queue.length);
+      expect(queue.at(-1)!.rating).toBeGreaterThan(3150);
+    }
+  });
+
+  it("con pocos puzzles salta al siguiente más difícil", () => {
+    const queue = buildStreakQueue(samples, "");
+    expect(queue[0].rating).toBeLessThan(750);
+    for (let i = 1; i < queue.length; i++) expect(queue[i].rating).toBeGreaterThanOrEqual(queue[i - 1].rating);
     expect(queue.at(-1)!.rating).toBe(2050);
   });
 });

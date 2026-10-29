@@ -3,7 +3,9 @@ import type { CompactPuzzle, Puzzle } from "../types";
 export const RECENT_LIMIT = 40;
 const WINDOW_STEP = 150;
 const MAX_WINDOW = 3000;
-const STREAK_JITTER = 180;
+export const STREAK_START = 600; // rating objetivo del primer puzzle de la racha
+export const STREAK_STEP = 50; // cuánto sube el objetivo con cada puzzle
+const STREAK_WINDOW = 100; // se elige al azar entre objetivo y objetivo + 100
 
 export function fromCompact([id, fen, moves, rating, themes]: CompactPuzzle): Puzzle {
   return {
@@ -51,12 +53,27 @@ export function pickRatedPuzzle(
   return randomItem(candidates, random);
 }
 
-/** Cola de la racha: ordenada por rating con un poco de aleatoriedad. */
+/**
+ * Cola de la racha: una escalera de dificultad. Cada puzzle se elige al azar entre
+ * los que están en [objetivo, objetivo + 100) y el objetivo sube 50 por puzzle.
+ * Si no hay ninguno en ese rango se toma el siguiente más fácil por encima del objetivo.
+ * La cola termina cuando no quedan puzzles más difíciles.
+ */
 export function buildStreakQueue(pool: Puzzle[], theme: string, random: Random = Math.random): Puzzle[] {
-  return filterByTheme(pool, theme)
-    .map((puzzle) => ({ puzzle, key: puzzle.rating + random() * STREAK_JITTER }))
-    .sort((a, b) => a.key - b.key)
-    .map((x) => x.puzzle);
+  const remaining = [...filterByTheme(pool, theme)].sort((a, b) => a.rating - b.rating);
+  const queue: Puzzle[] = [];
+  let target = Math.max(STREAK_START, remaining[0]?.rating ?? 0);
+  while (remaining.length) {
+    const inWindow = remaining.filter((p) => p.rating >= target && p.rating < target + STREAK_WINDOW);
+    const pick = inWindow.length ? randomItem(inWindow, random) : remaining.find((p) => p.rating >= target);
+    if (!pick) break;
+    queue.push(pick);
+    remaining.splice(remaining.indexOf(pick), 1);
+    // Si hubo que saltar a un puzzle más difícil, la escalera sigue desde ahí.
+    if (!inWindow.length) target = pick.rating;
+    target += STREAK_STEP;
+  }
+  return queue;
 }
 
 /** Temas presentes en el conjunto, del más común al menos común. */
