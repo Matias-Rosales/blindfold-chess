@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { LS_STATE, patchState, readJson } from "../lib/storage";
+import { patchJson, readJson } from "../lib/storage";
 import type { Settings } from "../types";
 
 const DEFAULT_SETTINGS: Settings = {
@@ -16,8 +16,8 @@ interface SettingsContextValue {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
-function loadSettings(): Settings {
-  const saved = readJson<{ settings?: Partial<Settings> }>(LS_STATE)?.settings;
+function loadSettings(storageKey: string): Settings {
+  const saved = readJson<{ settings?: Partial<Settings> }>(storageKey)?.settings;
   const merged = { ...DEFAULT_SETTINGS, ...saved };
   // Por si el storage tiene valores viejos o inválidos.
   if (![0, 3, 5, 10].includes(merged.memTime)) merged.memTime = DEFAULT_SETTINGS.memTime;
@@ -25,12 +25,13 @@ function loadSettings(): Settings {
   return merged;
 }
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>(loadSettings);
+/** Preferencias del usuario, guardadas en su clave de localStorage (`storageKey`). */
+export function SettingsProvider({ storageKey, children }: { storageKey: string; children: ReactNode }) {
+  const [settings, setSettings] = useState<Settings>(() => loadSettings(storageKey));
 
   useEffect(() => {
-    patchState({ settings });
-  }, [settings]);
+    patchJson(storageKey, { settings });
+  }, [storageKey, settings]);
 
   const updateSettings = (patch: Partial<Settings>) => setSettings((s) => ({ ...s, ...patch }));
 

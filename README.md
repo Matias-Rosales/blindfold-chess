@@ -7,6 +7,8 @@ Dos formas de entrenar, desde la pantalla de inicio:
 - **Puzzles**: elegidos según tu rating de visualización, que sube o baja con cada puzzle.
 - **Racha**: puzzles cada vez más difíciles. Un error y se termina. Una espiada por racha.
 
+Cada usuario tiene su cuenta, con sus estadísticas y sus opciones (tiempo para memorizar, si las piezas desaparecen o se vuelven círculos, tema). Las cuentas se guardan en el navegador: no hay servidor.
+
 Hecho con React, TypeScript, Vite, Tailwind CSS y chess.js. El diseño sigue al de la página de puzzles de Lichess.
 
 ## Uso

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useGame } from "../context/GameContext";
 import { useSettings } from "../context/SettingsContext";
 import { buildStreakQueue, pickRatedPuzzle } from "../lib/puzzles";
-import { patchState } from "../lib/storage";
 import type { Mode, Puzzle } from "../types";
 import { usePuzzle } from "./usePuzzle";
 
@@ -83,9 +82,6 @@ export function useTraining(mode: Mode) {
     startStreak(streak.over || !streak.queue.length ? freshStreak() : streak);
   };
 
-  useEffect(() => {
-    patchState({ mode });
-  }, [mode]);
 
   // En la racha, al resolver un puzzle pasa solo al siguiente.
   const { phase, failed } = puzzle.state;

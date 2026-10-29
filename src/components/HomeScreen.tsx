@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
+import { useAuth } from "../context/AuthContext";
 import { useGame } from "../context/GameContext";
 import { routeHref } from "../hooks/useHashRoute";
 import { pieceUrl } from "../lib/pieces";
-import { ImportPanel } from "./ImportPanel";
 import { Card } from "./ui/Card";
 import { ArrowIcon, FlameIcon } from "./ui/Icons";
 
@@ -37,17 +37,18 @@ function ModeCard({ href, icon, title, description, stat }: ModeCardProps) {
 
 const STEPS = [
   { title: "Mirá", text: "La posición se muestra unos segundos y el rival hace su jugada." },
-  { title: "Memorizá", text: "Elegís cuánto tiempo: 3, 5 o 10 segundos. Después las piezas se ocultan." },
+  { title: "Memorizá", text: "En Configuración elegís cuánto tiempo (3, 5 o 10 s) y si después las piezas desaparecen o se vuelven círculos." },
   { title: "Resolvé", text: "Tocá la pieza y después la casilla de destino. Si las piezas están ocultas, tocá la casilla donde estaba." },
 ];
 
 /** Pantalla de inicio: las dos formas de entrenar. */
 export function HomeScreen() {
+  const { user } = useAuth();
   const { rating, games, best } = useGame();
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 px-3 pt-4 pb-12 sm:px-5">
       <div>
-        <h1 className="text-3xl font-semibold text-strong sm:text-4xl dark:text-strong-dk">Entrená la visualización</h1>
+        <h1 className="text-3xl font-semibold text-strong sm:text-4xl dark:text-strong-dk">Hola, {user?.name}</h1>
         <p className="mt-2 max-w-2xl">
           Puzzles de ajedrez a ciegas: mirá la posición, memorizala y resolvé cuando las piezas desaparezcan.
         </p>
@@ -85,8 +86,6 @@ export function HomeScreen() {
           ))}
         </ol>
       </Card>
-
-      <ImportPanel />
     </main>
   );
 }

@@ -45,7 +45,7 @@ function describe({ feedback, mode, player, hideStyle, streakCount }: MessageBox
         title: "Tu turno",
         text:
           hideStyle === "checkers"
-            ? "Ahora solo ves fichas. Encontrá la mejor jugada."
+            ? "Ahora solo ves círculos. Encontrá la mejor jugada."
             : "Las piezas desaparecieron. Encontrá la mejor jugada.",
       };
     case "good":

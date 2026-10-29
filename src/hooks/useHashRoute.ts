@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 
-export type Route = "home" | "rated" | "streak";
+export type Route = "home" | "rated" | "streak" | "settings";
 
-const HASHES: Record<Route, string> = { home: "#/", rated: "#/puzzles", streak: "#/racha" };
+const HASHES: Record<Route, string> = {
+  home: "#/",
+  rated: "#/puzzles",
+  streak: "#/racha",
+  settings: "#/configuracion",
+};
 
 function parse(hash: string): Route {
   if (hash === HASHES.rated) return "rated";
   if (hash === HASHES.streak) return "streak";
+  if (hash === HASHES.settings) return "settings";
   return "home";
 }
 

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { SAMPLE_PUZZLES } from "../data/samples";
 import { fromCompact } from "../lib/puzzles";
 import { INITIAL_RATING, ratingDelta } from "../lib/rating";
-import { LS_POOL, LS_STATE, patchState, readJson, removeKey, writeJson } from "../lib/storage";
+import { LS_POOL, patchJson, readJson, removeKey, writeJson } from "../lib/storage";
 import type { CompactPuzzle, PoolSource, Puzzle, PuzzleIndex } from "../types";
 
 const RECENT_STORED = 80;
@@ -10,6 +10,7 @@ const RECENT_STORED = 80;
 interface Progress {
   rating: number;
   games: number; // puzzles con rating jugados
+  solved: number | null; // resueltos sin errores (null: datos de antes de que se contaran)
   best: number; // récord de racha
   recent: string[]; // ids de los últimos puzzles con rating
 }
@@ -23,6 +24,8 @@ interface GameContextValue extends Progress {
   poolSource: PoolSource;
   recordRatedResult: (puzzle: Puzzle, result: 0 | 1) => void;
   recordStreak: (count: number) => void;
+  /** Vuelve el rating, los puzzles jugados y el récord a cero. */
+  resetStats: () => void;
   /** Reemplaza el conjunto por puzzles importados. Devuelve false si no se pudieron guardar. */
   setImportedPool: (rows: CompactPuzzle[]) => boolean;
   importedRows: CompactPuzzle[] | null;
@@ -31,11 +34,14 @@ interface GameContextValue extends Progress {
 
 const GameContext = createContext<GameContextValue | null>(null);
 
-function loadProgress(): Progress {
-  const saved = readJson<Partial<Progress>>(LS_STATE) ?? {};
+const NEW_PROGRESS: Progress = { rating: INITIAL_RATING, games: 0, solved: 0, best: 0, recent: [] };
+
+function loadProgress(storageKey: string): Progress {
+  const saved = readJson<Partial<Progress>>(storageKey) ?? {};
   return {
     rating: typeof saved.rating === "number" ? saved.rating : INITIAL_RATING,
     games: typeof saved.games === "number" ? saved.games : 0,
+    solved: typeof saved.solved === "number" ? saved.solved : saved.games ? null : 0,
     best: typeof saved.best === "number" ? saved.best : 0,
     recent: Array.isArray(saved.recent) ? saved.recent : [],
   };
@@ -58,8 +64,9 @@ async function fetchServerPool(signal: AbortSignal): Promise<Puzzle[]> {
   return files.flat().map(fromCompact);
 }
 
-export function GameProvider({ children }: { children: ReactNode }) {
-  const [progress, setProgress] = useState<Progress>(loadProgress);
+/** Estadísticas del usuario (en su clave `storageKey`) y conjunto de puzzles. */
+export function GameProvider({ storageKey, children }: { storageKey: string; children: ReactNode }) {
+  const [progress, setProgress] = useState<Progress>(() => loadProgress(storageKey));
   const [lastDelta, setLastDelta] = useState<number | null>(null);
   const [importedRows, setImportedRows] = useState<CompactPuzzle[] | null>(() => {
     const rows = readJson<CompactPuzzle[]>(LS_POOL);
@@ -70,8 +77,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // Persistencia del progreso.
   useEffect(() => {
-    patchState(progress);
-  }, [progress]);
+    patchJson(storageKey, progress);
+  }, [storageKey, progress]);
 
   // Carga inicial de los puzzles generados por scripts/build-puzzles.ts.
   useEffect(() => {
@@ -104,8 +111,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
       ...p,
       rating: p.rating + delta,
       games: p.games + 1,
+      solved: p.solved === null ? null : p.solved + result,
       recent: [...p.recent, puzzle.id].slice(-RECENT_STORED),
     }));
+  };
+
+  const resetStats = () => {
+    setProgress(NEW_PROGRESS);
+    setLastDelta(null);
   };
 
   const recordStreak = (count: number) => setProgress((p) => (count > p.best ? { ...p, best: count } : p));
@@ -133,6 +146,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         poolSource,
         recordRatedResult,
         recordStreak,
+        resetStats,
         setImportedPool,
         importedRows,
         resetPool,

@@ -48,7 +48,7 @@ Obligatorios:
 También se usan:
 
 - **useEffect**: temporizador de ocultamiento con limpieza (`clearTimeout`) al cambiar de puzzle; demora de la respuesta del rival; temporizador de "espiar"; persistencia en `localStorage`; carga inicial de puzzles.
-- **Context**: `SettingsContext` para las preferencias y `GameContext` (o similar) para el rating y el conjunto de puzzles, así se evita el prop drilling.
+- **Context**: `AuthContext` para la sesión, `SettingsContext` para las preferencias y `GameContext` para las estadísticas y el conjunto de puzzles, así se evita el prop drilling.
 - **fetch**: carga de los JSON de puzzles desde `public/puzzles/`.
 - **Tailwind**: grilla del tablero (`grid grid-cols-8 aspect-square`), colores de casillas, transiciones de opacidad y desenfoque, modo oscuro con `dark:`.
 - **TypeScript**: tipos para todo el dominio (ver "Tipos") e interfaces de props.
@@ -97,12 +97,29 @@ Formato compacto de cada puzzle en el JSON: `[id, fen, moves, rating, themes]`, 
 
 Además, en `src/data/samples.ts` va un conjunto chico de puzzles de ejemplo para desarrollo y como respaldo si falla el fetch. Se pueden tomar los 17 del prototipo (ids `ej01` a `ej17`), que están verificados.
 
+## Cuentas (login)
+
+No hay servidor: las cuentas son **locales al navegador** (`AuthContext` y `src/lib/auth.ts`).
+
+- Sin sesión solo se ve la pantalla de login, con opción de registrarse.
+- Usuario: de 3 a 20 caracteres (letras, números, `-` y `_`). No distingue mayúsculas. Contraseña: al menos 4 caracteres, y al registrarse hay que repetirla.
+- La contraseña no se guarda: se guarda un hash PBKDF2-SHA256 (100.000 iteraciones) con una sal al azar por usuario, usando Web Crypto. Igual no es seguridad real, porque todo está en el cliente, y así se aclara en la interfaz.
+- Cada usuario tiene sus estadísticas (rating, puzzles jugados, resueltos sin errores, récord de racha e ids recientes) y sus opciones.
+- La sesión queda abierta al recargar. Se cierra desde el menú del usuario o desde Configuración.
+- Lo jugado antes de que existieran las cuentas (`aciegas.state.v1`) pasa a la primera cuenta que se crea.
+- `SettingsProvider` y `GameProvider` reciben la clave de storage del usuario y se vuelven a montar (con `key`) al cambiar de usuario.
+
 ## Pantallas
 
 La navegación usa el hash de la URL (`useHashRoute`), sin librería de rutas, así funcionan el botón "atrás" y los enlaces:
 
-- **Inicio** (`#/`): título, dos tarjetas para elegir cómo entrenar (**Puzzles** con rating y **Racha**, cada una con su dato: rating o récord), un "Cómo funciona" en tres pasos y la caja de la base de puzzles (con la importación de CSV).
-- **Puzzles** (`#/puzzles`) y **Racha** (`#/racha`): pantalla de entrenamiento. Desde la barra superior (`ModeTabs`) se puede pasar de un modo al otro.
+- **Login**: se muestra siempre que no haya sesión, sea cual sea la URL.
+- **Inicio** (`#/`): saludo, dos tarjetas para elegir cómo entrenar (**Puzzles** con rating y **Racha**, cada una con su dato: rating o récord) y un "Cómo funciona" en tres pasos.
+- **Puzzles** (`#/puzzles`) y **Racha** (`#/racha`): pantalla de entrenamiento. **No tiene ajustes**: solo un resumen de las opciones activas con un enlace a Configuración. Desde la barra superior (`ModeTabs`) se pasa de un modo al otro.
+- **Configuración** (`#/configuracion`), desde el menú del usuario en la barra superior:
+  - Entrenamiento: tiempo para memorizar, si las piezas desaparecen o se vuelven círculos (con una muestra de cada estilo), tema y nombres de casillas.
+  - Cuenta: estadísticas, reiniciarlas (con confirmación) y cerrar sesión.
+  - Base de puzzles, con la importación de CSV.
 
 La sesión de entrenamiento se vuelve a montar (con `key`) cuando cambian el modo, el conjunto de puzzles o el tema. El primer puzzle se elige al montar, no en un efecto.
 
@@ -143,22 +160,28 @@ La sesión de entrenamiento se vuelve a montar (con `key`) cuando cambian el mod
 
 Todas las lecturas y escrituras van en try/catch, y la app tiene que funcionar si el storage está vacío o no disponible.
 
-- `aciegas.state.v1`: rating, cantidad de puzzles jugados, récord de racha, preferencias (tiempo, estilo, tema, mostrar nombres de casillas), modo e ids recientes.
-- `aciegas.pool.v1`: puzzles importados por el usuario, si se mantiene la opción de importar un CSV propio desde el navegador. El límite práctico es de unos 6000 puzzles, porque el localStorage tiene unos 5 MB.
+- `aciegas.users.v1`: usuarios registrados, por nombre en minúsculas (nombre, sal, hash y fecha de creación).
+- `aciegas.session.v1`: el usuario con la sesión abierta.
+- `aciegas.user.<usuario>.v1`: estadísticas (rating, puzzles jugados, resueltos sin errores, récord de racha, ids recientes) y preferencias (tiempo, estilo, tema, mostrar nombres de casillas) de cada usuario.
+- `aciegas.pool.v1`: puzzles importados desde un CSV propio. Son del navegador, no de un usuario. El límite práctico es de unos 6000 puzzles, porque el localStorage tiene unos 5 MB.
+- `aciegas.state.v1`: estado de antes de las cuentas. Solo se lee para pasarlo a la primera cuenta.
 
 ## Estructura de componentes
 
-- `App`: providers, barra superior y elección de pantalla.
-- `Header` / `ModeTabs`: logo y pestañas de modo, como el menú de Lichess.
+- `App`: providers, barra superior y elección de pantalla (login si no hay sesión).
+- `LoginScreen`: iniciar sesión o crear una cuenta.
+- `Header` / `ModeTabs` / `UserMenu`: logo, pestañas de modo y menú del usuario (Configuración, Cerrar sesión), como la barra de Lichess.
 - `HomeScreen`: pantalla de inicio con las dos formas de entrenar.
 - `TrainingScreen`: espera a que carguen los puzzles y monta la sesión (tablero, herramientas y datos).
+- `SettingsScreen`: Configuración. Contiene `SettingsPanel`, la tarjeta de la cuenta e `ImportPanel`.
+- `SettingsSummary`: resumen de las opciones activas en la pantalla del tablero.
 - `Board`: props `fen`, `orientation`, `hidden`, `hideStyle`, `selected`, `lastMove`, `wrongSquare`, `onSquareClick` y `children` para superposiciones.
 - `Square`: nombre, color claro u oscuro, pieza, resaltados y coordenadas en el borde.
 - `Piece`: tipo, color y modo de visualización (pieza, ficha u oculta). La pieza y la ficha están siempre en el DOM y se alternan por clases, para que la transición se anime.
 - `TimerBar`: segundos y clave de reinicio.
 - `SolvedOverlay`: aviso de resuelto o fallado que aparece y se desvanece sobre el tablero.
 - `ScoreCard`, `PuzzleInfo` (id, rating y temas, que se muestran recién al terminar), `MessageBox`, `MoveLog`, `ActionButtons` (Espiar, Ver solución, Siguiente o Nueva racha).
-- `SettingsPanel`: tiempo, estilo, selector de temas con nombres en castellano y opción de mostrar el nombre de cada casilla.
+- `SettingsPanel`: tiempo, estilo (con muestra visual), selector de temas con nombres en castellano y opción de mostrar el nombre de cada casilla. Solo aparece en Configuración.
 - `ImportPanel`: origen de los puzzles e importación de un CSV propio.
 - `Card` / `Panel` / `Button`: contenedores y botón base.
 
@@ -169,9 +192,9 @@ La mecánica de un puzzle está en el hook `usePuzzle` y las reglas de cada modo
 ```
 src/
   components/      Board, Square, Piece, TimerBar, paneles…
-  context/         SettingsContext, GameContext
+  context/         AuthContext, SettingsContext, GameContext
   hooks/           usePuzzle, useTraining, useHashRoute
-  lib/             notación (SAN ↔ castellano), rating, selección de puzzles
+  lib/             notación, rating, selección de puzzles, cuentas (auth), storage
   data/            samples.ts, nombres de temas en castellano
   types.ts
 public/puzzles/    JSON por tramo de rating (generados por el script)

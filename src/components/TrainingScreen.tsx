@@ -7,12 +7,11 @@ import { ActionButtons } from "./ActionButtons";
 import { Board } from "./board/Board";
 import { SolvedOverlay } from "./board/SolvedOverlay";
 import { TimerBar } from "./board/TimerBar";
-import { ImportPanel } from "./ImportPanel";
 import { MessageBox } from "./MessageBox";
 import { MoveLog } from "./MoveLog";
 import { PuzzleInfo } from "./PuzzleInfo";
 import { ScoreCard } from "./ScoreCard";
-import { SettingsPanel } from "./SettingsPanel";
+import { SettingsSummary } from "./SettingsSummary";
 import { Card, Panel } from "./ui/Card";
 
 /** Espera a que estén los puzzles y reinicia la sesión si cambian el conjunto o el tema. */
@@ -102,8 +101,7 @@ function TrainingSession({ mode }: { mode: Mode }) {
       <Panel className="px-3 sm:px-0 [grid-area:side]">
         <ScoreCard mode={mode} streakCount={t.streak.count} />
         <PuzzleInfo puzzle={state.puzzle} finished={t.finished} />
-        <SettingsPanel />
-        <ImportPanel />
+        <SettingsSummary />
       </Panel>
     </main>
   );
